@@ -1,12 +1,12 @@
 // vfredsum: vd[0] =  sum( vs2[*] , vs1[0] )
 bool is_propagate = true;
-VI_VFP_VV_LOOP_REDUCTION
+VI_VFP_VV_LOOP_UNORDER_REDUCTION
 ({
-  vd_0 = f16_add(vd_0, vs2);
+  result = f16_add(val_0, val_1);
 },
 {
-  vd_0 = f32_add(vd_0, vs2);
+  result = f32_add(val_0, val_1);
 },
 {
-  vd_0 = f64_add(vd_0, vs2);
+  result = f64_add(val_0, val_1);
 })

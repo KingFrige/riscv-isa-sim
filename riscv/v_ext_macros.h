@@ -1471,6 +1471,37 @@ VI_VX_ULOOP({ \
     float##width##_t vs2 = P.VU.elt<float##width##_t>(rs2_num, i); \
     is_active = true; \
 
+#define VI_VFP_LOOP_UNORDER_REDUCTION_BASE(width, BODY) \
+  float##width##_t vd_0 = P.VU.elt<float##width##_t>(rd_num, 0); \
+  float##width##_t vs1_0 = P.VU.elt<float##width##_t>(rs1_num, 0); \
+  bool is_active = false; \
+  std::vector<float##width##_t> elements; \
+  elements.push_back(vs1_0); \
+  for (reg_t i = P.VU.vstart->read(); i < vl; ++i) { \
+    VI_LOOP_ELEMENT_SKIP(); \
+    float##width##_t vs2 = P.VU.elt<float##width##_t>(rs2_num, i); \
+    elements.push_back(vs2); \
+    is_active = true; \
+  } \
+  { \
+    while (elements.size() > 1) { \
+      std::vector<float##width##_t> new_elements; \
+      for (size_t i = 0; i < elements.size(); i += 2) { \
+        if (i + 1 < elements.size()) { \
+          float##width##_t val_0 = elements[i]; \
+          float##width##_t val_1 = elements[i+1]; \
+          float##width##_t result; \
+          BODY; \
+          new_elements.push_back(result); \
+        } else { \
+          new_elements.push_back(elements[i]); \
+        } \
+      } \
+      elements = new_elements; \
+    } \
+    vd_0 = elements[0]; \
+
+
 #define VI_VFP_LOOP_WIDE_REDUCTION_BASE \
   VI_VFP_COMMON \
   float64_t vd_0 = f64(P.VU.elt<float64_t>(rs1_num, 0).v); \
@@ -1631,6 +1662,34 @@ VI_VX_ULOOP({ \
       require(0); \
       break; \
   }; \
+
+#define VI_VFP_VV_LOOP_UNORDER_REDUCTION(BODY16, BODY32, BODY64) \
+  VI_CHECK_REDUCTION(false) \
+  VI_VFP_COMMON \
+  switch (P.VU.vsew) { \
+    case e16: { \
+      VI_VFP_LOOP_UNORDER_REDUCTION_BASE(16, BODY16) \
+        set_fp_exceptions; \
+      VI_VFP_LOOP_REDUCTION_END(e16) \
+      break; \
+    } \
+    case e32: { \
+      VI_VFP_LOOP_UNORDER_REDUCTION_BASE(32, BODY32) \
+        set_fp_exceptions; \
+      VI_VFP_LOOP_REDUCTION_END(e32) \
+      break; \
+    } \
+    case e64: { \
+      VI_VFP_LOOP_UNORDER_REDUCTION_BASE(64, BODY64) \
+        set_fp_exceptions; \
+      VI_VFP_LOOP_REDUCTION_END(e64) \
+      break; \
+    } \
+    default: \
+      require(0); \
+      break; \
+  }; \
+
 
 #define VI_VFP_VV_LOOP_WIDE_REDUCTION(BODY16, BODY32) \
   VI_CHECK_REDUCTION(true) \
