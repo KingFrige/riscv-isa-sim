@@ -2151,6 +2151,45 @@ c_t generic_dot_product(const std::vector<a_t>& a, const std::vector<b_t>& b, c_
   auto macc = [](auto a, auto b, auto c) { return c + decltype(c)(a) * decltype(c)(b); }; \
   ZVBDOT_GENERIC_LOOP(a_t, b_t, c_t, macc)
 
+#define ZVMATMUL_INIT(widen) \
+  require_vector(true); \
+  unsigned vd_eew = P.VU.vsew * (widen); \
+  unsigned vd_emul = std::max(1U, unsigned((8 * vd_eew) / P.VU.VLEN)); \
+  require_align(insn.rd(), vd_emul); \
+  unsigned vs1 = insn.rs1(); \
+  unsigned vs2 = insn.rs2(); \
+  unsigned vd  = insn.rd(); \
+  require(P.VU.vstart->read() == 0); \
+  require(P.VU.vsew == e8); \
+  require(P.VU.vl->read() == 64); \
+  require(P.VU.vflmul == 1); \
+  require_extension(EXT_ZVMATMUL);
+
+#define ZVMATMUL_LOOP(a_t, b_t, c_t, dot) \
+  for (reg_t i = 0; i < 8; i++) { \
+    for (reg_t j = 0; j < 8; j++) { \
+      std::vector<a_t> a(8, a_t()); \
+      std::vector<b_t> b(8, b_t()); \
+      for (reg_t k = 0; k < 8; k++) { \
+        reg_t a_idx = i * 8 + k; \
+        reg_t b_idx = j + k * 8; \
+        a[k] = P.VU.elt<a_t>(vs1, a_idx); \
+        b[k] = P.VU.elt<b_t>(vs2, b_idx); \
+      } \
+      reg_t idx = i * 8 + j; \
+      auto& acc = P.VU.elt<c_t>(vd, idx, true); \
+      acc = dot(a, b, acc); \
+    } \
+  }
+
+#define ZVMATMUL_GENERIC_LOOP(a_t, b_t, c_t, macc) \
+  auto dot = std::bind(generic_dot_product<a_t, b_t, c_t>, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, macc); \
+  ZVMATMUL_LOOP(a_t, b_t, c_t, dot)
+
+#define ZVMATMUL_SIMPLE_LOOP(a_t, b_t, c_t) \
+  auto macc = [](auto a, auto b, auto c) { return c + decltype(c)(a) * decltype(c)(b); }; \
+  ZVMATMUL_GENERIC_LOOP(a_t, b_t, c_t, macc)
+
 #define P_SET_OV(ov) \
   if (ov) P.VU.vxsat->write(1);
 

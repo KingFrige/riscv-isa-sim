@@ -1089,6 +1089,11 @@ riscv_insn_ext_zvldot = \
 	vfqldot_vv \
 	vfqldot_alt_vv \
 
+riscv_insn_ext_zvmatmul = \
+	vwmatmulu_vv \
+	vwmatmulsu_vv \
+	vwmatmuls_vv \
+
 riscv_insn_ext_zimop = \
 	mop_r_N \
 	mop_rr_N \
@@ -1159,6 +1164,7 @@ riscv_insn_list = \
 	$(riscv_insn_ext_zcmop) \
 	$(riscv_insn_ext_zicfilp) \
 	$(riscv_insn_ext_zicfiss) \
+	$(riscv_insn_ext_zvmatmul) \
 
 riscv_gen_srcs = $(addsuffix .cc,$(riscv_insn_list))
 

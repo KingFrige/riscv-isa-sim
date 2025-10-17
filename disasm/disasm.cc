@@ -1858,6 +1858,12 @@ void disassembler_t::add_instructions(const isa_parser_t* isa, bool strict)
       DISASM_OPIV__X__INSN(vqdotus, 0);
     }
 
+    if (ext_enabled(EXT_ZVMATMUL)) {
+      DEFINE_VECTOR_VV(vwmatmuls_vv);
+      DEFINE_VECTOR_VV(vwmatmulsu_vv);
+      DEFINE_VECTOR_VV(vwmatmulu_vv);
+    }
+
     #undef DISASM_OPIV_VXI_INSN
     #undef DISASM_OPIV_VX__INSN
     #undef DISASM_OPIV__XI_INSN

@@ -1,0 +1,3 @@
+ZVMATMUL_INIT(4);
+
+ZVMATMUL_SIMPLE_LOOP(int8_t, int8_t, int32_t);
