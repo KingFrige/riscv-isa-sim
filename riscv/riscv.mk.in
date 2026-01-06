@@ -36,6 +36,7 @@ riscv_install_hdrs = \
 	isa_parser.h \
 	jtag_dtm.h \
 	log_file.h \
+	mailbox.h \
 	memtracer.h \
 	mmu.h \
 	platform.h \
@@ -76,6 +77,7 @@ riscv_srcs = \
 	vector_unit.cc \
 	socketif.cc \
 	cfg.cc \
+	mailbox.cc \
 	$(riscv_gen_srcs) \
 
 riscv_test_srcs = \

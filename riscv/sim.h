@@ -9,6 +9,7 @@
 #include "log_file.h"
 #include "processor.h"
 #include "simif.h"
+#include "mailbox.h"
 
 #include <fesvr/htif.h>
 #include <vector>
@@ -82,6 +83,7 @@ private:
   std::vector<std::shared_ptr<abstract_device_t>> devices;
   std::shared_ptr<clint_t> clint;
   std::shared_ptr<plic_t> plic;
+  std::shared_ptr<mailbox_t> mailbox;
   bus_t bus;
   log_file_t log_file;
 

@@ -9,6 +9,7 @@
 #include "platform.h"
 #include "libfdt.h"
 #include "socketif.h"
+#include "mailbox.h"
 #include <fstream>
 #include <map>
 #include <iostream>
@@ -261,6 +262,10 @@ sim_t::sim_t(const cfg_t *cfg, bool halted,
       }
     }
   }
+
+  // 添加 mailbox 设备
+  mailbox = std::make_shared<mailbox_t>(this);
+  add_device(mailbox_t::MAILBOX_BASE, mailbox);
 }
 
 sim_t::~sim_t()
