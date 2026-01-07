@@ -10,7 +10,7 @@
 class mailbox_t : public abstract_device_t {
 public:
     // 寄存器偏移定义
-    static constexpr reg_t MAILBOX_BASE = 0x40000000; // 建议的基地址
+    static constexpr reg_t MAILBOX_BASE = 0x60000000; // 基地址，与固件和 spike_wrapper 匹配
     static constexpr reg_t MAILBOX_SIZE = 0x1000;     // 4KB 地址空间
     
     // 寄存器偏移

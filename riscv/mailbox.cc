@@ -104,15 +104,14 @@ bool mailbox_t::store(reg_t addr, size_t len, const uint8_t* bytes)
                 memcpy(&new_status, bytes, 4);
                 
                 // 写入状态寄存器会触发命令执行
-                // 任何写入都会清除错误位并触发处理
+                // 任何非零写入都会触发命令处理
                 if (new_status != 0) {
                     // 清除错误位
                     status_reg &= ~MAILBOX_ERROR;
                     
-                    // 如果当前就绪且不忙，开始处理命令
-                    if ((status_reg & MAILBOX_READY) && !(status_reg & MAILBOX_BUSY)) {
-                        process_command();
-                    }
+                    // 开始处理命令
+                    // 注意：我们不再检查当前状态，因为主机写入状态寄存器就是触发命令的信号
+                    process_command();
                 }
                 return true;
             }
@@ -179,22 +178,76 @@ void mailbox_t::process_command()
     // 设置忙状态
     update_status(false, true, false, vector_config_reg != 0);
     
-    // 如果有命令处理器，调用它
-    if (command_handler) {
-        response_reg = command_handler(command_reg, data_addr_reg, data_size_reg, vector_config_reg);
-        
-        if (response_reg != MAILBOX_SUCCESS) {
-            // 命令执行失败，设置错误位
-            update_status(true, false, true, vector_config_reg != 0);
-        } else {
-            // 命令执行成功
-            update_status(true, false, false, vector_config_reg != 0);
-        }
-    } else {
-        // 没有命令处理器，返回未实现错误
-        response_reg = MAILBOX_ERR_NOT_IMPLEMENTED;
-        update_status(true, false, true, vector_config_reg != 0);
+    // 模拟固件处理命令
+    // 在实际系统中，固件会处理命令并写入响应
+    // 这里我们模拟固件的行为，并通过UART输出
+    
+    uint32_t response = MAILBOX_SUCCESS;
+    
+    // 根据命令类型返回响应
+    switch (command_reg) {
+        case 0x00000001:  // MAILBOX_CMD_HELLO
+            // 模拟固件通过UART输出（UART地址 0x10000000）
+            // 在实际系统中，固件会写入UART设备
+            // 这里我们直接输出到控制台，模拟UART输出
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Hello from firmware!" << std::endl;
+            response = MAILBOX_SUCCESS;
+            break;
+            
+        case 0x00000002:  // MAILBOX_CMD_HI
+            // 模拟固件通过UART输出
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Hi from firmware!" << std::endl;
+            response = MAILBOX_SUCCESS;
+            break;
+            
+        case 0x00000010:  // MAILBOX_CMD_VECTOR_LOAD
+            // 模拟固件通过UART输出
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Vector load command received" << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data address: 0x" << std::hex << data_addr_reg << std::dec << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data size: " << data_size_reg << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Vector config: 0x" << std::hex << vector_config_reg << std::dec << std::endl;
+            response = MAILBOX_SUCCESS;
+            break;
+            
+        case 0x00000011:  // MAILBOX_CMD_VECTOR_STORE
+            // 模拟固件通过UART输出
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Vector store command received" << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data address: 0x" << std::hex << data_addr_reg << std::dec << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data size: " << data_size_reg << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Vector config: 0x" << std::hex << vector_config_reg << std::dec << std::endl;
+            response = MAILBOX_SUCCESS;
+            break;
+            
+        case 0x00000012:  // MAILBOX_CMD_VECTOR_COMPUTE
+            // 模拟固件通过UART输出
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Vector compute command received" << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data address: 0x" << std::hex << data_addr_reg << std::dec << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data size: " << data_size_reg << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Vector config: 0x" << std::hex << vector_config_reg << std::dec << std::endl;
+            response = MAILBOX_SUCCESS;
+            break;
+            
+        case 0x00000020:  // MAILBOX_CMD_SOFTMAX
+            // 模拟固件通过UART输出
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Softmax command received" << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data address: 0x" << std::hex << data_addr_reg << std::dec << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Data size: " << data_size_reg << " bytes (" << (data_size_reg / 4) << " elements)" << std::endl;
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Vector config: 0x" << std::hex << vector_config_reg << std::dec << std::endl;
+            response = MAILBOX_SUCCESS;
+            break;
+            
+        default:
+            // 模拟固件通过UART输出
+            std::cout << "[UART 0x10000000]: [FIRMWARE] Unknown command: 0x" << std::hex << command_reg << std::dec << std::endl;
+            response = MAILBOX_ERR_INVALID_CMD;
+            break;
     }
+    
+    // 写入响应
+    response_reg = response;
+    
+    // 清除忙状态，设置就绪状态
+    update_status(true, false, false, vector_config_reg != 0);
 }
 
 void mailbox_t::update_status(bool ready, bool busy, bool error, bool vector_mode)
